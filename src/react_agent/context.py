@@ -22,17 +22,33 @@ class Context:
     )
 
     model: Annotated[str, {"__template_metadata__": {"kind": "llm"}}] = field(
-        default="anthropic/claude-sonnet-4-5-20250929",
+        default="google_genai/gemini-flash-latest",
         metadata={
             "description": "The name of the language model to use for the agent's main interactions. "
             "Should be in the form: provider/model-name."
         },
     )
 
-    max_search_results: int = field(
-        default=10,
+    max_emails: int = field(
+        default=25,
         metadata={
-            "description": "The maximum number of search results to return for each search query."
+            "description": "The maximum number of emails to return for each Gmail search."
+        },
+    )
+
+    gmail_credentials_file: str = field(
+        default="credentials.json",
+        metadata={
+            "description": "Path to the Google Cloud OAuth client secrets file "
+            "(downloaded from the Google Cloud console)."
+        },
+    )
+
+    gmail_token_file: str = field(
+        default="token.json",
+        metadata={
+            "description": "Path where the cached OAuth token is stored after the "
+            "first successful sign-in. Created automatically."
         },
     )
 

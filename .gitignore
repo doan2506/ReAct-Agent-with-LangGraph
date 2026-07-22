@@ -162,3 +162,7 @@ cython_debug/
 #.idea/
 
 .langgraph_api
+
+# Gmail OAuth secrets — never commit these
+credentials.json
+token.json
