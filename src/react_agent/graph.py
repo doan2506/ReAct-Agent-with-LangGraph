@@ -4,7 +4,7 @@ Works with a chat model with tool calling support.
 """
 
 from datetime import UTC, datetime
-from typing import Dict, List, Literal, cast
+from typing import Dict, List, Literal
 
 from langchain_core.messages import AIMessage
 from langgraph.graph import StateGraph
@@ -35,7 +35,6 @@ async def call_model(
     """
     ctx = getattr(runtime, "context", None) or Context()
 
-
     # Initialize the model with tool binding
     model = load_chat_model(ctx.model).bind_tools(TOOLS)
 
@@ -45,11 +44,8 @@ async def call_model(
     )
 
     # Get the model's response
-    response = cast(
-        AIMessage,
-        await model.ainvoke(
-            [{"role": "system", "content": system_message}, *state.messages]
-        ),
+    response = await model.ainvoke(
+        [{"role": "system", "content": system_message}, *state.messages]
     )
 
     # Handle the case when it's the last step and the model still wants to use a tool

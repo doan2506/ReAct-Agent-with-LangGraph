@@ -74,3 +74,8 @@ dev = [
     "langgraph-cli[inmem]>=0.4.10",
     "pytest>=9.0.3",
 ]
+
+[[tool.mypy.overrides]]
+module = ["langchain_google_community.*"]
+ignore_missing_imports = true
+

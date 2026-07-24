@@ -3,7 +3,7 @@
 from __future__ import annotations
 
 from dataclasses import dataclass, field
-from typing import Sequence
+from typing import Any, Sequence
 
 from langchain_core.messages import AnyMessage
 from langgraph.graph import add_messages
@@ -54,7 +54,7 @@ class State(InputState):
     """
 
     # Optional state attributes for tracking agent execution and email workflow
-    retrieved_emails: list[dict] = field(default_factory=list)
+    retrieved_emails: list[dict[str, Any]] = field(default_factory=list)
     """List of email summaries or metadata retrieved during the run."""
 
     email_summary: str | None = field(default=None)
