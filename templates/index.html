@@ -1,0 +1,229 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>LangGraph ReAct Loop Visualizer</title>
+    <!-- Google Fonts -->
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Fira+Code:wght@400;500;600&family=Inter:wght@300;400;500;600;700;800&family=Outfit:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+    <!-- Font Awesome Icons -->
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css">
+    <!-- Stylesheet -->
+    <link rel="stylesheet" href="{{ url_for('static', filename='css/style.css') }}">
+</head>
+<body class="dark-theme">
+    <div class="app-layout">
+        <!-- HEADER NAVBAR -->
+        <header class="app-header">
+            <div class="brand">
+                <div class="brand-icon">
+                    <i class="fa-solid fa-diagram-project"></i>
+                </div>
+                <div class="brand-text">
+                    <h1>LangGraph <span>ReAct</span> Visualizer</h1>
+                    <p class="subtitle">Real-time Reasoning & Action Cycle Explorer</p>
+                </div>
+            </div>
+
+            <div class="header-actions">
+                <div class="status-badge" id="statusBadge">
+                    <span class="status-dot"></span>
+                    <span class="status-text" id="statusText">System Ready</span>
+                </div>
+
+                <div class="toggle-control">
+                    <label class="switch">
+                        <input type="checkbox" id="simToggle">
+                        <span class="slider round"></span>
+                    </label>
+                    <span class="toggle-label"><i class="fa-solid fa-flask"></i> Demo / Simulation</span>
+                </div>
+            </div>
+        </header>
+
+        <div class="main-container">
+            <!-- LEFT SIDEBAR: CONFIG & STATS -->
+            <aside class="sidebar">
+                <div class="card sidebar-card">
+                    <div class="card-header">
+                        <h3><i class="fa-solid fa-sliders"></i> Agent Settings</h3>
+                    </div>
+                    <div class="form-group">
+                        <label for="modelSelect"><i class="fa-solid fa-robot"></i> Model Provider</label>
+                        <select id="modelSelect" class="form-control">
+                            <option value="google_genai/gemini-flash-latest" selected>Gemini Flash (Google)</option>
+                            <option value="openai/gpt-4o-mini">GPT-4o Mini (OpenAI)</option>
+                            <option value="anthropic/claude-3-5-sonnet-20241022">Claude 3.5 Sonnet (Anthropic)</option>
+                        </select>
+                    </div>
+
+                    <div class="form-group">
+                        <label for="systemPrompt"><i class="fa-solid fa-terminal"></i> System Prompt</label>
+                        <textarea id="systemPrompt" class="form-control" rows="4">You are an assistant that helps the user stay on top of their tasks and queries. Reason step-by-step and call tools when needed.</textarea>
+                    </div>
+                </div>
+
+                <div class="card sidebar-card">
+                    <div class="card-header">
+                        <h3><i class="fa-solid fa-toolbox"></i> Active Tools</h3>
+                    </div>
+                    <div class="tools-list">
+                        <div class="tool-chip active">
+                            <i class="fa-solid fa-magnifying-glass"></i>
+                            <div class="tool-info">
+                                <span class="tool-name">search</span>
+                                <span class="tool-desc">Web Search Engine</span>
+                            </div>
+                            <span class="badge badge-success">Active</span>
+                        </div>
+                        <div class="tool-chip active">
+                            <i class="fa-solid fa-envelope"></i>
+                            <div class="tool-info">
+                                <span class="tool-name">search_emails</span>
+                                <span class="tool-desc">Gmail Unread Search</span>
+                            </div>
+                            <span class="badge badge-success">Active</span>
+                        </div>
+                        <div class="tool-chip active">
+                            <i class="fa-solid fa-calculator"></i>
+                            <div class="tool-info">
+                                <span class="tool-name">calculator</span>
+                                <span class="tool-desc">Math Evaluator</span>
+                            </div>
+                            <span class="badge badge-success">Active</span>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="card sidebar-card stats-card">
+                    <div class="card-header">
+                        <h3><i class="fa-solid fa-chart-simple"></i> Loop Telemetry</h3>
+                    </div>
+                    <div class="stats-grid">
+                        <div class="stat-box">
+                            <span class="stat-num" id="statSteps">0</span>
+                            <span class="stat-label">ReAct Cycles</span>
+                        </div>
+                        <div class="stat-box">
+                            <span class="stat-num" id="statToolCalls">0</span>
+                            <span class="stat-label">Tool Calls</span>
+                        </div>
+                        <div class="stat-box">
+                            <span class="stat-num" id="statElapsed">0.0s</span>
+                            <span class="stat-label">Elapsed Time</span>
+                        </div>
+                    </div>
+                </div>
+            </aside>
+
+            <!-- RIGHT WORKSPACE: GRAPH VISUALIZER + TRAJECTORY STREAM -->
+            <main class="workspace">
+                <!-- TOP PANEL: REACT NODE GRAPH FLOW (SVG) -->
+                <section class="card graph-card">
+                    <div class="card-header">
+                        <h3><i class="fa-solid fa-network-wired"></i> LangGraph Node State Diagram</h3>
+                        <div class="legend">
+                            <span class="legend-item"><span class="dot dot-idle"></span> Idle</span>
+                            <span class="legend-item"><span class="dot dot-active"></span> Active Node</span>
+                            <span class="legend-item"><span class="dot dot-done"></span> Completed</span>
+                        </div>
+                    </div>
+
+                    <div class="node-graph-container">
+                        <div class="node-box" id="node-start">
+                            <div class="node-icon"><i class="fa-solid fa-play"></i></div>
+                            <div class="node-label">START</div>
+                            <div class="node-sub">User Query Input</div>
+                        </div>
+
+                        <div class="flow-arrow arrow-1">
+                            <i class="fa-solid fa-chevron-right"></i>
+                        </div>
+
+                        <div class="node-box node-llm" id="node-call_model">
+                            <div class="node-icon"><i class="fa-solid fa-brain"></i></div>
+                            <div class="node-label">call_model</div>
+                            <div class="node-sub">LLM Reason & Act</div>
+                            <div class="pulse-ring"></div>
+                        </div>
+
+                        <div class="loop-connector">
+                            <div class="loop-arrow top-arrow">
+                                <span class="arrow-text">Tool Calls</span>
+                                <i class="fa-solid fa-arrow-right"></i>
+                            </div>
+                            <div class="loop-arrow bottom-arrow">
+                                <i class="fa-solid fa-arrow-left"></i>
+                                <span class="arrow-text">Observations</span>
+                            </div>
+                        </div>
+
+                        <div class="node-box node-tools" id="node-tools">
+                            <div class="node-icon"><i class="fa-solid fa-wrench"></i></div>
+                            <div class="node-label">tools</div>
+                            <div class="node-sub">Tool Node Execution</div>
+                            <div class="pulse-ring"></div>
+                        </div>
+
+                        <div class="flow-arrow arrow-2">
+                            <i class="fa-solid fa-chevron-right"></i>
+                        </div>
+
+                        <div class="node-box" id="node-__end__">
+                            <div class="node-icon"><i class="fa-solid fa-flag-checkered"></i></div>
+                            <div class="node-label">END</div>
+                            <div class="node-sub">Final Output</div>
+                        </div>
+                    </div>
+                </section>
+
+                <!-- MIDDLE PANEL: TRAJECTORY FEED STREAM -->
+                <section class="card trajectory-card">
+                    <div class="card-header">
+                        <h3><i class="fa-solid fa-list-check"></i> Execution Trajectory Stream</h3>
+                        <button class="btn btn-outline" id="clearBtn"><i class="fa-solid fa-trash-can"></i> Clear Stream</button>
+                    </div>
+
+                    <div class="trajectory-feed" id="trajectoryFeed">
+                        <!-- Welcome Placeholder -->
+                        <div class="empty-state" id="emptyState">
+                            <div class="empty-icon"><i class="fa-solid fa-comments-sparkles"></i></div>
+                            <h4>No Active Trajectory</h4>
+                            <p>Enter a query below or select a prompt pill to trigger the ReAct agent graph execution in real-time.</p>
+                        </div>
+                    </div>
+                </section>
+
+                <!-- BOTTOM PANEL: PROMPT INPUT BAR -->
+                <section class="card input-card">
+                    <div class="prompt-pills">
+                        <span class="pill-label"><i class="fa-solid fa-wand-magic-sparkles"></i> Try Samples:</span>
+                        <button class="pill-btn" data-prompt="What is the ReAct architecture in AI agents?">
+                            <i class="fa-solid fa-circle-question"></i> What is ReAct architecture?
+                        </button>
+                        <button class="pill-btn" data-prompt="Tổng hợp giúp tôi các email chưa đọc trong inbox">
+                            <i class="fa-solid fa-envelope"></i> Tổng hợp email chưa đọc
+                        </button>
+                        <button class="pill-btn" data-prompt="Search recent news about space exploration and calculate 15 * 84">
+                            <i class="fa-solid fa-calculator"></i> Search Space News & Math
+                        </button>
+                    </div>
+
+                    <div class="input-form">
+                        <textarea id="promptInput" class="prompt-input" rows="2" placeholder="Ask your agent anything... (e.g. 'Summarize my unread emails or search latest AI news')"></textarea>
+                        <button class="btn btn-primary" id="runBtn">
+                            <i class="fa-solid fa-paper-plane"></i>
+                            <span>Run Loop</span>
+                        </button>
+                    </div>
+                </section>
+            </main>
+        </div>
+    </div>
+
+    <!-- JavaScript -->
+    <script src="{{ url_for('static', filename='js/app.js') }}"></script>
+</body>
+</html>
