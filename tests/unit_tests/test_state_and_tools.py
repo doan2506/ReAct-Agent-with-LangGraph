@@ -1,11 +1,13 @@
 """Unit tests for state dataclasses, utility helpers, and tool exception handling."""
 
 import asyncio
+
 import pytest
+from langchain_core.messages import HumanMessage
+
 from react_agent.state import InputState, State
 from react_agent.tools import TOOLS, get_email, get_thread, search_emails
-from react_agent.utils import get_message_text, load_chat_model
-from langchain_core.messages import HumanMessage
+from react_agent.utils import get_message_text
 
 
 def test_state_initialization() -> None:

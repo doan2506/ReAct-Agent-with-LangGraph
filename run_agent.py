@@ -1,6 +1,9 @@
+"""CLI runner for the Gmail ReAct Agent."""
+
 import asyncio
 import os
 import sys
+
 from dotenv import load_dotenv
 
 load_dotenv()
@@ -10,7 +13,8 @@ if hasattr(sys.stdout, "reconfigure"):
     sys.stdout.reconfigure(encoding="utf-8")
 
 
-async def run():
+async def run() -> None:
+    """Run the Gmail ReAct agent from the command line."""
     # Retrieve user query from command line argument or use default
     if len(sys.argv) > 1:
         query = " ".join(sys.argv[1:])
@@ -28,8 +32,8 @@ async def run():
         print("Please add GOOGLE_API_KEY (or OPENAI_API_KEY) to your .env file before running.\n")
         return
 
-    from react_agent.graph import graph
     from react_agent.context import Context
+    from react_agent.graph import graph
 
     try:
         inputs = {"messages": [("user", query)]}
