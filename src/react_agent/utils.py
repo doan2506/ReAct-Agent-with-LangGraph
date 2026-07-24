@@ -21,7 +21,12 @@ def load_chat_model(fully_specified_name: str) -> BaseChatModel:
     """Load a chat model from a fully specified name.
 
     Args:
-        fully_specified_name (str): String in the format 'provider/model'.
+        fully_specified_name (str): String in the format 'provider/model' or 'model'.
     """
-    provider, model = fully_specified_name.split("/", maxsplit=1)
+    if "/" in fully_specified_name:
+        provider, model = fully_specified_name.split("/", maxsplit=1)
+    else:
+        provider = None
+        model = fully_specified_name
     return init_chat_model(model, model_provider=provider)
+

@@ -18,6 +18,18 @@ from langgraph.runtime import get_runtime
 from react_agent.context import Context
 
 
+def _get_context() -> Context:
+    """Retrieve runtime context safely, falling back to default Context if uninitialized."""
+    try:
+        rt = get_runtime(Context)
+        if rt is not None and getattr(rt, "context", None) is not None:
+            return rt.context
+    except Exception:
+        pass
+    return Context()
+
+
+
 @lru_cache(maxsize=1)
 def _get_gmail_api_resource(credentials_file: str, token_file: str) -> Any:
     """Build (and cache) an authenticated Gmail API resource.
@@ -52,19 +64,29 @@ async def search_emails(query: str) -> Any:
     Returns a list of messages with their ids, thread ids, subject, sender and
     a short snippet. Use ``get_email`` with a message id to read the full body.
     """
-    ctx = get_runtime(Context).context
-    # Building the API resource runs the blocking OAuth flow (file access,
-    # local server) — offload it so it doesn't block the event loop.
-    api_resource = await asyncio.to_thread(
-        _get_gmail_api_resource, ctx.gmail_credentials_file, ctx.gmail_token_file
-    )
-    from langchain_google_community.gmail.search import GmailSearch
+    ctx = _get_context()
+    try:
+        api_resource = await asyncio.to_thread(
+            _get_gmail_api_resource, ctx.gmail_credentials_file, ctx.gmail_token_file
+        )
+        from langchain_google_community.gmail.search import GmailSearch
 
-    tool = GmailSearch(api_resource=api_resource)
-    return await asyncio.to_thread(
-        tool.invoke,
-        {"query": query, "resource": "messages", "max_results": ctx.max_emails},
-    )
+        tool = GmailSearch(api_resource=api_resource)
+        res = await asyncio.to_thread(
+            tool.invoke,
+            {"query": query, "resource": "messages", "max_results": ctx.max_emails},
+        )
+        if not res:
+            return f"No emails found matching query '{query}' in mailbox."
+        return res
+
+    except FileNotFoundError:
+        return (
+            f"Error: Credentials or token file not found ('{ctx.gmail_credentials_file}' / '{ctx.gmail_token_file}'). "
+            "Please run 'python authorize_gmail.py' first to complete OAuth setup."
+        )
+    except Exception as e:
+        return f"Error executing search_emails: {e}"
 
 
 async def get_email(message_id: str) -> Any:
@@ -73,14 +95,22 @@ async def get_email(message_id: str) -> Any:
     Use the ``id`` returned by ``search_emails``. Returns the subject, sender,
     and the full message body so you can summarize it.
     """
-    ctx = get_runtime(Context).context
-    api_resource = await asyncio.to_thread(
-        _get_gmail_api_resource, ctx.gmail_credentials_file, ctx.gmail_token_file
-    )
-    from langchain_google_community.gmail.get_message import GmailGetMessage
+    ctx = _get_context()
+    try:
+        api_resource = await asyncio.to_thread(
+            _get_gmail_api_resource, ctx.gmail_credentials_file, ctx.gmail_token_file
+        )
+        from langchain_google_community.gmail.get_message import GmailGetMessage
 
-    tool = GmailGetMessage(api_resource=api_resource)
-    return await asyncio.to_thread(tool.invoke, {"message_id": message_id})
+        tool = GmailGetMessage(api_resource=api_resource)
+        return await asyncio.to_thread(tool.invoke, {"message_id": message_id})
+    except FileNotFoundError:
+        return (
+            f"Error: Credentials or token file not found ('{ctx.gmail_credentials_file}' / '{ctx.gmail_token_file}'). "
+            "Please run 'python authorize_gmail.py' first to complete OAuth setup."
+        )
+    except Exception as e:
+        return f"Error executing get_email: {e}"
 
 
 async def get_thread(thread_id: str) -> Any:
@@ -89,14 +119,23 @@ async def get_thread(thread_id: str) -> Any:
     Use the ``threadId`` returned by ``search_emails`` when you need the full
     back-and-forth of a conversation rather than a single message.
     """
-    ctx = get_runtime(Context).context
-    api_resource = await asyncio.to_thread(
-        _get_gmail_api_resource, ctx.gmail_credentials_file, ctx.gmail_token_file
-    )
-    from langchain_google_community.gmail.get_thread import GmailGetThread
+    ctx = _get_context()
+    try:
+        api_resource = await asyncio.to_thread(
+            _get_gmail_api_resource, ctx.gmail_credentials_file, ctx.gmail_token_file
+        )
+        from langchain_google_community.gmail.get_thread import GmailGetThread
 
-    tool = GmailGetThread(api_resource=api_resource)
-    return await asyncio.to_thread(tool.invoke, {"thread_id": thread_id})
+        tool = GmailGetThread(api_resource=api_resource)
+        return await asyncio.to_thread(tool.invoke, {"thread_id": thread_id})
+    except FileNotFoundError:
+        return (
+            f"Error: Credentials or token file not found ('{ctx.gmail_credentials_file}' / '{ctx.gmail_token_file}'). "
+            "Please run 'python authorize_gmail.py' first to complete OAuth setup."
+        )
+    except Exception as e:
+        return f"Error executing get_thread: {e}"
 
 
 TOOLS: List[Callable[..., Any]] = [search_emails, get_email, get_thread]
+

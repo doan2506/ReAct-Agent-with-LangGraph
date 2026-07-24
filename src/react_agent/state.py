@@ -53,8 +53,13 @@ class State(InputState):
     It is set to 'True' when the step count reaches recursion_limit - 1.
     """
 
-    # Additional attributes can be added here as needed.
-    # Common examples include:
-    # retrieved_documents: List[Document] = field(default_factory=list)
-    # extracted_entities: Dict[str, Any] = field(default_factory=dict)
-    # api_connections: Dict[str, Any] = field(default_factory=dict)
+    # Optional state attributes for tracking agent execution and email workflow
+    retrieved_emails: list[dict] = field(default_factory=list)
+    """List of email summaries or metadata retrieved during the run."""
+
+    email_summary: str | None = field(default=None)
+    """Final compiled email summary text if stored explicitly."""
+
+    error: str | None = field(default=None)
+    """Tracks any non-fatal runtime or tool error encountered during execution."""
+

@@ -89,4 +89,9 @@ You can find the latest (under construction) docs on [LangGraph](https://github.
 
 LangGraph Studio also integrates with [LangSmith](https://smith.langchain.com/) for more in-depth tracing and collaboration with teammates.
 
+## Testing & Verification Guide
+
+For a step-by-step testing guide (unit tests, CLI test runner `run_agent.py`, and Studio dev server), see [TESTING.md](TESTING.md).
+
+
 [^1]: https://python.langchain.com/docs/concepts/#tools
