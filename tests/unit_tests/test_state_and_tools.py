@@ -33,8 +33,14 @@ def test_get_message_text_helper() -> None:
 
 
 
-def test_tools_graceful_missing_credentials() -> None:
+def test_tools_graceful_missing_credentials(monkeypatch: pytest.MonkeyPatch) -> None:
     # Test that calling search_emails without authorized files returns an error string instead of crashing
+    monkeypatch.setenv("GMAIL_CREDENTIALS_FILE", "non_existent_credentials.json")
+    monkeypatch.setenv("GMAIL_TOKEN_FILE", "non_existent_token.json")
+
+    from react_agent.tools import _get_gmail_api_resource
+    _get_gmail_api_resource.cache_clear()
+
     async def _test():
         res_search = await search_emails("is:unread")
         assert isinstance(res_search, str)
@@ -46,6 +52,7 @@ def test_tools_graceful_missing_credentials() -> None:
         assert isinstance(res_thread, str)
 
     asyncio.run(_test())
+    _get_gmail_api_resource.cache_clear()
 
 
 
