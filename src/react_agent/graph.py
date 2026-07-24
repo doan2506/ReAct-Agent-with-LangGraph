@@ -4,7 +4,7 @@ Works with a chat model with tool calling support.
 """
 
 from datetime import UTC, datetime
-from typing import Dict, List, Literal, cast
+from typing import Dict, List, Literal
 
 from langchain_core.messages import AIMessage
 from langgraph.graph import StateGraph
@@ -28,25 +28,24 @@ async def call_model(
 
     Args:
         state (State): The current state of the conversation.
-        config (RunnableConfig): Configuration for the model run.
+        runtime (Runtime[Context]): Runtime context provided by LangGraph.
 
     Returns:
         dict: A dictionary containing the model's response message.
     """
-    # Initialize the model with tool binding. Change the model or add more tools here.
-    model = load_chat_model(runtime.context.model).bind_tools(TOOLS)
+    ctx = getattr(runtime, "context", None) or Context()
 
-    # Format the system prompt. Customize this to change the agent's behavior.
-    system_message = runtime.context.system_prompt.format(
-        system_time=datetime.now(tz=UTC).isoformat()
+    # Initialize the model with tool binding
+    model = load_chat_model(ctx.model).bind_tools(TOOLS)
+
+    # Format system prompt safely without failing on extra curly braces in prompt templates
+    system_message = ctx.system_prompt.replace(
+        "{system_time}", datetime.now(tz=UTC).isoformat()
     )
 
     # Get the model's response
-    response = cast( # type: ignore[redundant-cast]
-        AIMessage,
-        await model.ainvoke(
-            [{"role": "system", "content": system_message}, *state.messages]
-        ),
+    response = await model.ainvoke(
+        [{"role": "system", "content": system_message}, *state.messages]
     )
 
     # Handle the case when it's the last step and the model still wants to use a tool
@@ -55,13 +54,14 @@ async def call_model(
             "messages": [
                 AIMessage(
                     id=response.id,
-                    content="Sorry, I could not find an answer to your question in the specified number of steps.",
+                    content="Sorry, I could not find a complete answer to your request in the specified number of steps.",
                 )
             ]
         }
 
     # Return the model's response as a list to be added to existing messages
     return {"messages": [response]}
+
 
 
 # Define a new graph
