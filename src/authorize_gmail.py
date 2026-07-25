@@ -7,7 +7,7 @@ Run this ONCE in your terminal to generate or update `token.json`:
 import os
 
 from dotenv import load_dotenv
-from langchain_google_community.gmail.utils import get_gmail_credentials
+from google_auth_oauthlib.flow import InstalledAppFlow
 
 load_dotenv()
 
@@ -27,12 +27,21 @@ def main() -> None:
         print("Please download credentials.json from Google Cloud Console and place it in the project root.")
         return
 
+    # Delete outdated token.json if existing token has old/mismatching scope
+    if os.path.exists(TOKEN):
+        try:
+            os.remove(TOKEN)
+            print(f"🔄 Removed outdated '{TOKEN}' to request updated OAuth scopes.")
+        except Exception as e:
+            print(f"Warning: Could not remove old token file: {e}")
+
     print("🔐 Starting Google OAuth flow for Gmail & Calendar...")
-    get_gmail_credentials(
-        token_file=TOKEN,
-        client_sercret_file=CREDENTIALS,
-        scopes=SCOPES,
-    )
+    flow = InstalledAppFlow.from_client_secrets_file(CREDENTIALS, SCOPES)
+    creds = flow.run_local_server(port=0)
+
+    with open(TOKEN, "w") as f:
+        f.write(creds.to_json())
+
     print(f"\n✅ OAuth Authorization successful! Token saved to '{TOKEN}'.")
 
 
