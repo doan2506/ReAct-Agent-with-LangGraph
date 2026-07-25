@@ -148,14 +148,31 @@ document.addEventListener("DOMContentLoaded", () => {
         scrollToBottom();
     }
 
+    function formatActionArgs(args) {
+        if (!args) return "";
+        if (typeof args === "string") return args;
+        if (typeof args === "object") {
+            if (args.query) return args.query;
+            const keys = Object.keys(args);
+            if (keys.length === 1) {
+                return String(args[keys[0]]);
+            }
+            return keys.map(k => {
+                let v = args[k];
+                if (typeof v === "object") v = JSON.stringify(v);
+                return `${k}="${v}"`;
+            }).join(", ");
+        }
+        return String(args);
+    }
+
     function appendReasoningStep(data) {
         if (!trajectoryFeed) return;
 
         let thoughtText = data.thought || (typeof data.content === "string" ? data.content : "");
         if (!thoughtText && data.tool_calls && data.tool_calls.length > 0) {
-            const firstCall = data.tool_calls[0];
-            const argVal = firstCall.args ? (firstCall.args.query || JSON.stringify(firstCall.args)) : "";
-            thoughtText = `QUERY: ${argVal}`;
+            const toolNames = data.tool_calls.map(c => c.name).join(", ");
+            thoughtText = `I will execute tool(s): ${toolNames}`;
         }
 
         // 1. Separate Single Box for Thought (Appears immediately)
@@ -177,10 +194,10 @@ document.addEventListener("DOMContentLoaded", () => {
                 setTimeout(() => {
                     const actionCard = document.createElement("div");
                     actionCard.className = "step-card";
-                    const argStr = call.args ? (call.args.query || JSON.stringify(call.args)) : "";
+                    const argStr = formatActionArgs(call.args);
                     actionCard.innerHTML = `
                         <div class="react-line react-action">
-                            <span class="react-label">Action:</span> <span class="action-fn">${escapeHtml(call.name)}</span>('${escapeHtml(argStr)}')
+                            <span class="react-label">Action:</span> <span class="action-fn">${escapeHtml(call.name)}</span>(${escapeHtml(argStr)})
                         </div>
                     `;
                     trajectoryFeed.appendChild(actionCard);
