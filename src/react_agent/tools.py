@@ -1,9 +1,7 @@
-"""Tools for the Gmail-summarizing ReAct agent.
+"""Tools for the Gmail & Calendar ReAct agent.
 
-This module exposes **read-only** Gmail tools built on top of
-``langchain-google-community``. The agent can search the mailbox (e.g. for
-unread messages) and read individual messages / threads, but it cannot send,
-draft, delete, or otherwise modify anything.
+This module exposes Gmail tools (search, read, draft creation) and Google Calendar tools
+built on top of ``langchain-google-community`` and Google API client.
 
 Authentication uses OAuth: on first run a browser window opens to grant access,
 and a ``token.json`` is cached so subsequent runs are non-interactive.
@@ -29,27 +27,38 @@ def _get_context() -> Context:
     return Context()
 
 
+@lru_cache(maxsize=1)
+def _get_google_credentials(credentials_file: str, token_file: str) -> Any:
+    """Obtain and cache OAuth credentials with Gmail and Calendar scopes."""
+    from langchain_google_community.gmail.utils import get_gmail_credentials
+
+    return get_gmail_credentials(
+        token_file=token_file,
+        client_sercret_file=credentials_file,
+        scopes=[
+            "https://www.googleapis.com/auth/gmail.readonly",
+            "https://www.googleapis.com/auth/gmail.compose",
+            "https://www.googleapis.com/auth/calendar.events",
+        ],
+    )
+
 
 @lru_cache(maxsize=1)
 def _get_gmail_api_resource(credentials_file: str, token_file: str) -> Any:
-    """Build (and cache) an authenticated Gmail API resource.
+    """Build (and cache) an authenticated Gmail API resource."""
+    from langchain_google_community.gmail.utils import build_resource_service
 
-    The resource is cached so the OAuth flow only runs once per process.
-    Requesting the ``gmail.readonly`` scope keeps this agent read-only.
-    """
-    from langchain_google_community.gmail.utils import (
-        build_resource_service,
-        get_gmail_credentials,
-    )
-
-    credentials = get_gmail_credentials(
-        token_file=token_file,
-        # NOTE: the parameter is misspelled ("sercret") in
-        # langchain-google-community's public API — keep it verbatim.
-        client_sercret_file=credentials_file,
-        scopes=["https://www.googleapis.com/auth/gmail.readonly"],
-    )
+    credentials = _get_google_credentials(credentials_file, token_file)
     return build_resource_service(credentials=credentials)
+
+
+@lru_cache(maxsize=1)
+def _get_calendar_api_resource(credentials_file: str, token_file: str) -> Any:
+    """Build (and cache) an authenticated Google Calendar API resource."""
+    from googleapiclient.discovery import build
+
+    credentials = _get_google_credentials(credentials_file, token_file)
+    return build("calendar", "v3", credentials=credentials)
 
 
 async def search_emails(query: str) -> Any:
@@ -137,5 +146,91 @@ async def get_thread(thread_id: str) -> Any:
         return f"Error executing get_thread: {e}"
 
 
-TOOLS: List[Callable[..., Any]] = [search_emails, get_email, get_thread]
+async def create_draft(to: str, subject: str, body: str, thread_id: str = "") -> Any:
+    """Create a draft reply or new email in Gmail for user review before sending.
 
+    Use this tool whenever an email needs a response, drafting a reply for the user to approve.
+
+    Args:
+        to: Email address of the recipient.
+        subject: Subject line of the email draft.
+        body: Body text content of the email draft.
+        thread_id: Optional thread ID if replying to an existing conversation thread.
+    """
+    ctx = _get_context()
+    try:
+        api_resource = await asyncio.to_thread(
+            _get_gmail_api_resource, ctx.gmail_credentials_file, ctx.gmail_token_file
+        )
+        from langchain_google_community.gmail.create_draft import GmailCreateDraft
+
+        tool = GmailCreateDraft(api_resource=api_resource)
+        args: dict[str, Any] = {"to": [to], "subject": subject, "message": body}
+        if thread_id:
+            args["thread_id"] = thread_id
+
+        res = await asyncio.to_thread(tool.invoke, args)
+        return f"Draft created successfully for '{to}' with subject '{subject}'. User can review and send it in Gmail! Details: {res}"
+    except FileNotFoundError:
+        return (
+            f"Error: Credentials or token file not found ('{ctx.gmail_credentials_file}' / '{ctx.gmail_token_file}'). "
+            "Please run 'python authorize_gmail.py' first to complete OAuth setup."
+        )
+    except Exception as e:
+        return f"Error executing create_draft: {e}"
+
+
+async def schedule_meeting(
+    summary: str,
+    start_time: str,
+    end_time: str,
+    description: str = "",
+    attendees: str = "",
+) -> Any:
+    """Schedule a meeting or calendar event on Google Calendar.
+
+    Use this tool whenever an email or query requests a meeting, appointment, or event.
+
+    Args:
+        summary: Title or summary of the meeting.
+        start_time: Start time in ISO format (e.g. '2026-07-26T10:00:00+07:00').
+        end_time: End time in ISO format (e.g. '2026-07-26T11:00:00+07:00').
+        description: Optional agenda, description, or notes for the meeting.
+        attendees: Optional comma-separated list of attendee email addresses.
+    """
+    ctx = _get_context()
+    try:
+        calendar_service = await asyncio.to_thread(
+            _get_calendar_api_resource, ctx.gmail_credentials_file, ctx.gmail_token_file
+        )
+        event_body: dict[str, Any] = {
+            "summary": summary,
+            "description": description,
+            "start": {"dateTime": start_time},
+            "end": {"dateTime": end_time},
+        }
+        if attendees:
+            attendee_list = [{"email": a.strip()} for a in attendees.split(",") if a.strip()]
+            event_body["attendees"] = attendee_list
+
+        event = await asyncio.to_thread(
+            calendar_service.events().insert(calendarId="primary", body=event_body).execute
+        )
+        html_link = event.get("htmlLink", "N/A")
+        return f"Meeting '{summary}' scheduled successfully! Start: {start_time}, End: {end_time}. Event link: {html_link}"
+    except FileNotFoundError:
+        return (
+            f"Error: Credentials or token file not found ('{ctx.gmail_credentials_file}' / '{ctx.gmail_token_file}'). "
+            "Please run 'python authorize_gmail.py' first to complete OAuth setup."
+        )
+    except Exception as e:
+        return f"Error executing schedule_meeting: {e}"
+
+
+TOOLS: List[Callable[..., Any]] = [
+    search_emails,
+    get_email,
+    get_thread,
+    create_draft,
+    schedule_meeting,
+]

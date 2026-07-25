@@ -78,7 +78,7 @@ dev = [
 ]
 
 [[tool.mypy.overrides]]
-module = ["langchain_google_community.*", "flask.*"]
+module = ["langchain_google_community.*", "flask.*", "googleapiclient.*"]
 ignore_missing_imports = true
 
 [[tool.mypy.overrides]]

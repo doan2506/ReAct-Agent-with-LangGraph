@@ -6,7 +6,14 @@ import pytest
 from langchain_core.messages import HumanMessage
 
 from react_agent.state import InputState, State
-from react_agent.tools import TOOLS, get_email, get_thread, search_emails
+from react_agent.tools import (
+    TOOLS,
+    create_draft,
+    get_email,
+    get_thread,
+    schedule_meeting,
+    search_emails,
+)
 from react_agent.utils import get_message_text
 
 
@@ -34,13 +41,13 @@ def test_get_message_text_helper() -> None:
     assert get_message_text(msg_dict) == "Nested text"
 
 
-
 def test_tools_graceful_missing_credentials(monkeypatch: pytest.MonkeyPatch) -> None:
-    # Test that calling search_emails without authorized files returns an error string instead of crashing
+    # Test that calling tools without authorized files returns an error string instead of crashing
     monkeypatch.setenv("GMAIL_CREDENTIALS_FILE", "non_existent_credentials.json")
     monkeypatch.setenv("GMAIL_TOKEN_FILE", "non_existent_token.json")
 
-    from react_agent.tools import _get_gmail_api_resource
+    from react_agent.tools import _get_gmail_api_resource, _get_google_credentials
+    _get_google_credentials.cache_clear()
     _get_gmail_api_resource.cache_clear()
 
     async def _test():
@@ -53,14 +60,22 @@ def test_tools_graceful_missing_credentials(monkeypatch: pytest.MonkeyPatch) -> 
         res_thread = await get_thread("fake_thread_id")
         assert isinstance(res_thread, str)
 
+        res_draft = await create_draft("test@example.com", "Test Subject", "Test Body")
+        assert isinstance(res_draft, str)
+
+        res_meeting = await schedule_meeting("Test Meeting", "2026-07-26T10:00:00+07:00", "2026-07-26T11:00:00+07:00")
+        assert isinstance(res_meeting, str)
+
     asyncio.run(_test())
+    _get_google_credentials.cache_clear()
     _get_gmail_api_resource.cache_clear()
 
 
-
 def test_tools_list() -> None:
-    assert len(TOOLS) == 3
+    assert len(TOOLS) == 5
     tool_names = [t.__name__ for t in TOOLS]
     assert "search_emails" in tool_names
     assert "get_email" in tool_names
     assert "get_thread" in tool_names
+    assert "create_draft" in tool_names
+    assert "schedule_meeting" in tool_names
