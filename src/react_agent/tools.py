@@ -92,7 +92,7 @@ async def search_emails(query: str) -> Any:
     except FileNotFoundError:
         return (
             f"Error: Credentials or token file not found ('{ctx.gmail_credentials_file}' / '{ctx.gmail_token_file}'). "
-            "Please run 'python authorize_gmail.py' first to complete OAuth setup."
+            "Please run 'python src/authorize_gmail.py' first to complete OAuth setup."
         )
     except Exception as e:
         return f"Error executing search_emails: {e}"
@@ -116,7 +116,7 @@ async def get_email(message_id: str) -> Any:
     except FileNotFoundError:
         return (
             f"Error: Credentials or token file not found ('{ctx.gmail_credentials_file}' / '{ctx.gmail_token_file}'). "
-            "Please run 'python authorize_gmail.py' first to complete OAuth setup."
+            "Please run 'python src/authorize_gmail.py' first to complete OAuth setup."
         )
     except Exception as e:
         return f"Error executing get_email: {e}"
@@ -140,7 +140,7 @@ async def get_thread(thread_id: str) -> Any:
     except FileNotFoundError:
         return (
             f"Error: Credentials or token file not found ('{ctx.gmail_credentials_file}' / '{ctx.gmail_token_file}'). "
-            "Please run 'python authorize_gmail.py' first to complete OAuth setup."
+            "Please run 'python src/authorize_gmail.py' first to complete OAuth setup."
         )
     except Exception as e:
         return f"Error executing get_thread: {e}"
@@ -174,7 +174,7 @@ async def create_draft(to: str, subject: str, body: str, thread_id: str = "") ->
     except FileNotFoundError:
         return (
             f"Error: Credentials or token file not found ('{ctx.gmail_credentials_file}' / '{ctx.gmail_token_file}'). "
-            "Please run 'python authorize_gmail.py' first to complete OAuth setup."
+            "Please run 'python src/authorize_gmail.py' first to complete OAuth setup."
         )
     except Exception as e:
         return f"Error executing create_draft: {e}"
@@ -221,7 +221,7 @@ async def schedule_meeting(
     except FileNotFoundError:
         return (
             f"Error: Credentials or token file not found ('{ctx.gmail_credentials_file}' / '{ctx.gmail_token_file}'). "
-            "Please run 'python authorize_gmail.py' first to complete OAuth setup."
+            "Please run 'python src/authorize_gmail.py' first to complete OAuth setup."
         )
     except Exception as e:
         return f"Error executing schedule_meeting: {e}"

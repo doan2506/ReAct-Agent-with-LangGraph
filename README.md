@@ -58,9 +58,9 @@ GOOGLE_API_KEY=your_actual_google_api_key_here
 
 2. **Xác thực quyền đăng nhập (chỉ làm 1 lần)**:
    ```bash
-   python authorize_gmail.py
+   python src/authorize_gmail.py
    ```
-   Trình duyệt sẽ tự động mở ra. Bạn tiến hành đăng nhập và chấp nhận cấp quyền đọc Gmail. Sau khi thành công, file `token.json` sẽ tự động được lưu.
+   Trình duyệt sẽ tự động mở ra. Bạn tiến hành đăng nhập và chấp nhận cấp quyền đọc Gmail, tạo Draft và Calendar. Sau khi thành công, file `token.json` sẽ tự động được lưu.
 
 ---
 
@@ -94,14 +94,14 @@ pytest tests/unit_tests
 ```text
 ReAct-Agent-with-LangGraph/
 ├── src/
+│   ├── authorize_gmail.py # Script kích hoạt OAuth Gmail & Calendar 1 lần
 │   └── react_agent/
 │       ├── graph.py       # Định nghĩa luồng ReAct (nodes & edges)
-│       ├── tools.py       # Các Gmail tools (search_emails, get_email, get_thread)
+│       ├── tools.py       # Gmail & Calendar tools
 │       ├── context.py     # Cấu hình runtime context & tham số
 │       ├── state.py       # Định nghĩa State và InputState
 │       └── utils.py       # Helper functions cho LLM và xử lý tin nhắn
 ├── tests/                 # Unit tests & integration tests
-├── authorize_gmail.py     # Script kích hoạt OAuth Gmail 1 lần
 ├── run_agent.py           # Script chính để chạy Agent từ CLI
 ├── .env.example           # File mẫu biến môi trường
 └── pyproject.toml         # Cấu hình dự án & dependencies
