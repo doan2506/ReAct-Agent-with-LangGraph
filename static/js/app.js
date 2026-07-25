@@ -158,7 +158,7 @@ document.addEventListener("DOMContentLoaded", () => {
             thoughtText = `QUERY: ${argVal}`;
         }
 
-        // 1. Separate Single Box for Thought
+        // 1. Separate Single Box for Thought (Appears immediately)
         if (thoughtText) {
             const thoughtCard = document.createElement("div");
             thoughtCard.className = "step-card";
@@ -168,24 +168,26 @@ document.addEventListener("DOMContentLoaded", () => {
                 </div>
             `;
             trajectoryFeed.appendChild(thoughtCard);
+            scrollToBottom();
         }
 
-        // 2. Separate Single Box for Action
+        // 2. Separate Single Box for Action (Appears with 350ms staggered delay per tool call)
         if (data.tool_calls && data.tool_calls.length > 0) {
-            data.tool_calls.forEach(call => {
-                const actionCard = document.createElement("div");
-                actionCard.className = "step-card";
-                const argStr = call.args ? (call.args.query || JSON.stringify(call.args)) : "";
-                actionCard.innerHTML = `
-                    <div class="react-line react-action">
-                        <span class="react-label">Action:</span> <span class="action-fn">${escapeHtml(call.name)}</span>('${escapeHtml(argStr)}')
-                    </div>
-                `;
-                trajectoryFeed.appendChild(actionCard);
+            data.tool_calls.forEach((call, index) => {
+                setTimeout(() => {
+                    const actionCard = document.createElement("div");
+                    actionCard.className = "step-card";
+                    const argStr = call.args ? (call.args.query || JSON.stringify(call.args)) : "";
+                    actionCard.innerHTML = `
+                        <div class="react-line react-action">
+                            <span class="react-label">Action:</span> <span class="action-fn">${escapeHtml(call.name)}</span>('${escapeHtml(argStr)}')
+                        </div>
+                    `;
+                    trajectoryFeed.appendChild(actionCard);
+                    scrollToBottom();
+                }, (index + 1) * 350);
             });
         }
-
-        scrollToBottom();
     }
 
     function appendObservationStep(data) {
