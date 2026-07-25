@@ -204,7 +204,7 @@ async def generate_langgraph_events(
 @app.route("/")
 def index() -> str:
     """Render the main ReAct Visualizer dashboard."""
-    return render_template("index.html")
+    return str(render_template("index.html"))
 
 
 @app.route("/api/config", methods=["GET"])
