@@ -7,9 +7,9 @@ tool invocations, node state transitions, and execution trajectory.
 import asyncio
 import json
 import os
-import time
 import sys
-from typing import Any, AsyncGenerator, Dict, List
+import time
+from typing import Any, AsyncGenerator, Dict, Generator, List
 
 from dotenv import load_dotenv
 from flask import Flask, Response, jsonify, render_template, request
@@ -20,10 +20,15 @@ if hasattr(sys.stdout, "reconfigure"):
 load_dotenv()
 
 
+BASE_DIR = os.path.dirname(os.path.abspath(__file__))
+PROJECT_ROOT = os.path.dirname(BASE_DIR)
+TEMPLATE_DIR = os.path.join(PROJECT_ROOT, "templates")
+STATIC_DIR = os.path.join(PROJECT_ROOT, "static")
+
 app = Flask(
     __name__,
-    template_folder="templates",
-    static_folder="static",
+    template_folder=TEMPLATE_DIR,
+    static_folder=STATIC_DIR,
 )
 
 
@@ -36,7 +41,7 @@ def _safe_json(obj: Any) -> str:
 
 
 def mock_stream_events(query: str) -> List[Dict[str, Any]]:
-    """Generate realistic mock ReAct execution events for instant demo / offline mode."""
+    """Generate realistic mock ReAct execution events in classic User/Thought/Action/Observation format."""
     events = []
 
     # Start event
@@ -49,7 +54,7 @@ def mock_stream_events(query: str) -> List[Dict[str, Any]]:
         },
     })
 
-    # Step 1: LLM Reasoning
+    # Step 1: LLM Reasoning + Action
     events.append({
         "event": "node_change",
         "data": {"node": "call_model", "step": 1, "status": "active"},
@@ -60,10 +65,10 @@ def mock_stream_events(query: str) -> List[Dict[str, Any]]:
         "data": {
             "step": 1,
             "node": "call_model",
-            "thought": f"The user is asking: '{query}'. To provide an accurate, up-to-date answer, I need to gather relevant information using available tools.",
+            "thought": f"QUERY: What is the main context and background regarding '{query}'?",
             "tool_calls": [
                 {
-                    "name": "search",
+                    "name": "search_emails" if "email" in query.lower() else "search",
                     "args": {"query": query},
                     "id": "call_mock_001",
                 }
@@ -71,35 +76,25 @@ def mock_stream_events(query: str) -> List[Dict[str, Any]]:
         },
     })
 
-    # Step 1: Tool Execution
+    # Step 1: Tool Execution & Observation
     events.append({
         "event": "node_change",
         "data": {"node": "tools", "step": 1, "status": "active"},
     })
 
-    events.append({
-        "event": "tool_call",
-        "data": {
-            "step": 1,
-            "node": "tools",
-            "tool": "search",
-            "args": {"query": query},
-            "call_id": "call_mock_001",
-        },
-    })
-
+    tool_used = "search_emails" if "email" in query.lower() else "search"
     events.append({
         "event": "tool_result",
         "data": {
             "step": 1,
             "node": "tools",
-            "tool": "search",
-            "output": f"Search results for '{query}': Found recent documentation, benchmarks, and community discussions. All systems operational.",
+            "tool": tool_used,
+            "output": f"Found key records for '{query}': All details retrieved, verified, and ready for synthesis.",
             "call_id": "call_mock_001",
         },
     })
 
-    # Step 2: LLM Synthesis / Final Answer
+    # Step 2: Final Thought & Output
     events.append({
         "event": "node_change",
         "data": {"node": "call_model", "step": 2, "status": "active"},
@@ -110,17 +105,16 @@ def mock_stream_events(query: str) -> List[Dict[str, Any]]:
         "data": {
             "step": 2,
             "node": "call_model",
-            "thought": "I have received the search results. I will now format a clear, comprehensive response for the user.",
+            "thought": "I have gathered enough information.",
             "tool_calls": [],
         },
     })
 
     final_answer_text = (
-        f"Based on the analysis for your query **\"{query}\"**:\n\n"
-        "1. **ReAct Loop Execution**: The agent initialized, analyzed the prompt, and dispatched tool requests.\n"
-        "2. **Information Gathering**: Relevant web search results and state data were retrieved and processed.\n"
-        "3. **Synthesis**: All data points have been verified and integrated into this final output.\n\n"
-        "Everything is running smoothly!"
+        f"Based on the analysis for your request **\"{query}\"**:\n\n"
+        "1. **Primary Findings**: The information was retrieved and verified through available tools.\n"
+        "2. **Summary**: All details have been structured and processed step-by-step in the ReAct loop.\n\n"
+        "Execution completed successfully!"
     )
 
     events.append({
@@ -158,12 +152,14 @@ async def generate_langgraph_events(
     yield f"event: start\ndata: {_safe_json({'query': query, 'model': model_name, 'timestamp': start_time})}\n\n"
 
     try:
+        from langchain_core.messages import AIMessage, HumanMessage, ToolMessage
+
         from react_agent.context import Context
         from react_agent.graph import graph
-        from langchain_core.messages import AIMessage, ToolMessage, HumanMessage
+        from react_agent.state import InputState
 
         ctx = Context(model=model_name, system_prompt=system_prompt)
-        inputs = {"messages": [HumanMessage(content=query)]}
+        inputs = InputState(messages=[HumanMessage(content=query)])
 
         step_count = 0
         tool_call_count = 0
@@ -206,26 +202,27 @@ async def generate_langgraph_events(
 
 
 @app.route("/")
-def index():
+def index() -> str:
     """Render the main ReAct Visualizer dashboard."""
     return render_template("index.html")
 
 
 @app.route("/api/config", methods=["GET"])
-def get_config():
+def get_config() -> Response:
     """Return available models and system defaults."""
     has_google = bool(os.getenv("GOOGLE_API_KEY") or os.getenv("GEMINI_API_KEY"))
     has_openai = bool(os.getenv("OPENAI_API_KEY"))
     has_anthropic = bool(os.getenv("ANTHROPIC_API_KEY"))
 
     return jsonify({
-        "default_model": "google_genai/gemini-flash-latest",
+        "default_model": "google_genai/gemini-3.5-flash-lite",
         "api_keys_status": {
             "google": has_google,
             "openai": has_openai,
             "anthropic": has_anthropic,
         },
         "models": [
+            {"id": "google_genai/gemini-3.5-flash-lite", "name": "Gemini 3.5 Flash Lite (Google)", "available": has_google or True},
             {"id": "google_genai/gemini-flash-latest", "name": "Gemini Flash (Google)", "available": has_google or True},
             {"id": "openai/gpt-4o-mini", "name": "GPT-4o Mini (OpenAI)", "available": has_openai},
             {"id": "anthropic/claude-3-5-sonnet-20241022", "name": "Claude 3.5 Sonnet (Anthropic)", "available": has_anthropic},
@@ -234,10 +231,10 @@ def get_config():
 
 
 @app.route("/api/stream", methods=["GET"])
-def stream_react_loop():
+def stream_react_loop() -> Response:
     """SSE endpoint streaming ReAct loop execution events."""
     query = request.args.get("query", "What is ReAct pattern in AI agents?")
-    model_name = request.args.get("model", "google_genai/gemini-flash-latest")
+    model_name = request.args.get("model", "google_genai/gemini-3.5-flash-lite")
     system_prompt = request.args.get(
         "system_prompt",
         "You are a helpful ReAct AI assistant that uses tools to solve user tasks step by step.",
@@ -253,7 +250,7 @@ def stream_react_loop():
     )
 
     if use_simulation or not has_keys:
-        def generate_mock():
+        def generate_mock() -> Generator[str, None, None]:
             for evt in mock_stream_events(query):
                 evt_name = evt["event"]
                 evt_data = _safe_json(evt["data"])
@@ -262,7 +259,7 @@ def stream_react_loop():
 
         return Response(generate_mock(), mimetype="text/event-stream")
 
-    def generate_real():
+    def generate_real() -> Generator[str, None, None]:
         loop = asyncio.new_event_loop()
         asyncio.set_event_loop(loop)
         gen = generate_langgraph_events(query, model_name, system_prompt)

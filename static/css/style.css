@@ -1,5 +1,5 @@
 /* ==========================================================================
-   LangGraph ReAct Loop Visualizer - Design System & Modern Dark Styling
+   LangGraph ReAct Agent - Clean & Simple Styling
    ========================================================================== */
 
 :root {
@@ -23,7 +23,6 @@
     
     --glow-cyan: 0 0 20px rgba(0, 240, 255, 0.35);
     --glow-purple: 0 0 20px rgba(168, 85, 247, 0.35);
-    --glow-emerald: 0 0 20px rgba(16, 185, 129, 0.35);
     
     --radius-lg: 16px;
     --radius-md: 12px;
@@ -81,7 +80,7 @@ body {
     display: flex;
     justify-content: space-between;
     align-items: center;
-    padding: 16px 28px;
+    padding: 14px 24px;
     background: var(--bg-secondary);
     border-bottom: 1px solid var(--border-color);
     box-shadow: 0 4px 20px rgba(0, 0, 0, 0.4);
@@ -91,25 +90,25 @@ body {
 .brand {
     display: flex;
     align-items: center;
-    gap: 14px;
+    gap: 12px;
 }
 
 .brand-icon {
-    width: 44px;
-    height: 44px;
+    width: 38px;
+    height: 38px;
     border-radius: var(--radius-md);
     background: linear-gradient(135deg, var(--accent-cyan), var(--accent-purple));
     display: flex;
     align-items: center;
     justify-content: center;
-    font-size: 20px;
+    font-size: 18px;
     color: #fff;
     box-shadow: var(--glow-cyan);
 }
 
 .brand-text h1 {
     font-family: 'Outfit', sans-serif;
-    font-size: 22px;
+    font-size: 20px;
     font-weight: 700;
     letter-spacing: -0.5px;
 }
@@ -118,15 +117,37 @@ body {
     color: var(--accent-cyan);
 }
 
-.brand-text .subtitle {
-    font-size: 12px;
-    color: var(--text-muted);
-}
-
 .header-actions {
     display: flex;
     align-items: center;
-    gap: 20px;
+    gap: 16px;
+}
+
+.model-picker {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    background: var(--bg-primary);
+    border: 1px solid var(--border-color);
+    padding: 4px 10px;
+    border-radius: var(--radius-md);
+    color: var(--accent-cyan);
+    font-size: 13px;
+}
+
+.form-control-sm {
+    background: transparent;
+    border: none;
+    color: var(--text-main);
+    font-size: 13px;
+    font-family: inherit;
+    outline: none;
+    cursor: pointer;
+}
+
+.form-control-sm option {
+    background: var(--bg-secondary);
+    color: var(--text-main);
 }
 
 .status-badge {
@@ -170,16 +191,16 @@ body {
 .toggle-control {
     display: flex;
     align-items: center;
-    gap: 10px;
-    font-size: 13px;
+    gap: 8px;
+    font-size: 12px;
     color: var(--text-muted);
 }
 
 .switch {
     position: relative;
     display: inline-block;
-    width: 44px;
-    height: 24px;
+    width: 38px;
+    height: 20px;
 }
 
 .switch input { opacity: 0; width: 0; height: 0; }
@@ -196,8 +217,8 @@ body {
 .slider:before {
     position: absolute;
     content: "";
-    height: 16px; width: 16px;
-    left: 3px; bottom: 3px;
+    height: 14px; width: 14px;
+    left: 2px; bottom: 2px;
     background-color: var(--text-muted);
     transition: .4s;
 }
@@ -208,38 +229,27 @@ input:checked + .slider {
 }
 
 input:checked + .slider:before {
-    transform: translateX(20px);
+    transform: translateX(18px);
     background-color: #fff;
 }
 
-.slider.round { border-radius: 24px; }
+.slider.round { border-radius: 20px; }
 .slider.round:before { border-radius: 50%; }
 
 /* ==========================================================================
-   Main Grid Layout
+   Main Single-Column Workspace
    ========================================================================== */
 
-.main-container {
+.main-container.simple-container {
     display: grid;
-    grid-template-columns: 320px 1fr;
+    grid-template-rows: 1fr auto;
+    max-width: 1000px;
+    width: 100%;
+    margin: 0 auto;
     flex: 1;
     overflow: hidden;
-    gap: 16px;
+    gap: 14px;
     padding: 16px;
-}
-
-.sidebar {
-    display: flex;
-    flex-direction: column;
-    gap: 16px;
-    overflow-y: auto;
-}
-
-.workspace {
-    display: grid;
-    grid-template-rows: auto 1fr auto;
-    gap: 16px;
-    overflow: hidden;
 }
 
 /* Cards */
@@ -248,22 +258,17 @@ input:checked + .slider:before {
     backdrop-filter: blur(12px);
     border: 1px solid var(--border-color);
     border-radius: var(--radius-lg);
-    padding: 18px;
+    padding: 16px;
     display: flex;
     flex-direction: column;
     box-shadow: 0 8px 32px rgba(0, 0, 0, 0.3);
-    transition: border-color var(--transition-fast);
-}
-
-.card:hover {
-    border-color: rgba(255, 255, 255, 0.15);
 }
 
 .card-header {
     display: flex;
     justify-content: space-between;
     align-items: center;
-    margin-bottom: 14px;
+    margin-bottom: 12px;
 }
 
 .card-header h3 {
@@ -278,247 +283,6 @@ input:checked + .slider:before {
 
 .card-header h3 i {
     color: var(--accent-cyan);
-}
-
-/* Form Controls */
-.form-group {
-    margin-bottom: 14px;
-}
-
-.form-group label {
-    display: block;
-    font-size: 12px;
-    font-weight: 500;
-    color: var(--text-muted);
-    margin-bottom: 6px;
-}
-
-.form-control {
-    width: 100%;
-    padding: 10px 12px;
-    background: var(--bg-primary);
-    border: 1px solid var(--border-color);
-    border-radius: var(--radius-md);
-    color: var(--text-main);
-    font-size: 13px;
-    font-family: inherit;
-    transition: all var(--transition-fast);
-}
-
-.form-control:focus {
-    outline: none;
-    border-color: var(--accent-cyan);
-    box-shadow: 0 0 10px rgba(0, 240, 255, 0.2);
-}
-
-/* Tools List */
-.tools-list {
-    display: flex;
-    flex-direction: column;
-    gap: 8px;
-}
-
-.tool-chip {
-    display: flex;
-    align-items: center;
-    gap: 12px;
-    padding: 10px 12px;
-    background: rgba(255, 255, 255, 0.03);
-    border: 1px solid var(--border-color);
-    border-radius: var(--radius-md);
-}
-
-.tool-chip i {
-    font-size: 14px;
-    color: var(--accent-cyan);
-}
-
-.tool-info {
-    flex: 1;
-    display: flex;
-    flex-direction: column;
-}
-
-.tool-name {
-    font-family: 'Fira Code', monospace;
-    font-size: 12px;
-    font-weight: 600;
-    color: var(--text-main);
-}
-
-.tool-desc {
-    font-size: 11px;
-    color: var(--text-dim);
-}
-
-.badge {
-    font-size: 10px;
-    padding: 2px 8px;
-    border-radius: 10px;
-    font-weight: 600;
-}
-
-.badge-success {
-    background: rgba(16, 185, 129, 0.15);
-    color: var(--accent-emerald);
-    border: 1px solid rgba(16, 185, 129, 0.3);
-}
-
-/* Telemetry Grid */
-.stats-grid {
-    display: grid;
-    grid-template-columns: repeat(3, 1fr);
-    gap: 8px;
-}
-
-.stat-box {
-    background: rgba(0, 0, 0, 0.3);
-    padding: 12px 8px;
-    border-radius: var(--radius-sm);
-    text-align: center;
-    border: 1px solid var(--border-color);
-}
-
-.stat-num {
-    display: block;
-    font-family: 'Fira Code', monospace;
-    font-size: 16px;
-    font-weight: 700;
-    color: var(--accent-cyan);
-}
-
-.stat-label {
-    font-size: 10px;
-    color: var(--text-dim);
-    text-transform: uppercase;
-}
-
-/* ==========================================================================
-   ReAct Node Graph Diagram
-   ========================================================================== */
-
-.graph-card {
-    padding: 16px 24px;
-}
-
-.legend {
-    display: flex;
-    gap: 16px;
-    font-size: 12px;
-    color: var(--text-muted);
-}
-
-.legend-item {
-    display: flex;
-    align-items: center;
-    gap: 6px;
-}
-
-.dot {
-    width: 8px;
-    height: 8px;
-    border-radius: 50%;
-}
-.dot-idle { background: var(--text-dim); }
-.dot-active { background: var(--accent-cyan); box-shadow: 0 0 8px var(--accent-cyan); }
-.dot-done { background: var(--accent-purple); }
-
-.node-graph-container {
-    display: flex;
-    align-items: center;
-    justify-content: space-between;
-    padding: 16px 0;
-    position: relative;
-}
-
-.node-box {
-    position: relative;
-    background: var(--bg-secondary);
-    border: 2px solid var(--border-color);
-    border-radius: var(--radius-md);
-    padding: 12px 18px;
-    min-width: 130px;
-    text-align: center;
-    transition: all var(--transition-normal);
-}
-
-.node-icon {
-    font-size: 18px;
-    margin-bottom: 4px;
-    color: var(--text-muted);
-}
-
-.node-label {
-    font-family: 'Fira Code', monospace;
-    font-size: 13px;
-    font-weight: 700;
-}
-
-.node-sub {
-    font-size: 10px;
-    color: var(--text-dim);
-}
-
-/* Active Node Pulsing */
-.node-box.active {
-    border-color: var(--accent-cyan);
-    box-shadow: var(--glow-cyan);
-    background: rgba(0, 240, 255, 0.08);
-}
-
-.node-box.active .node-icon,
-.node-box.active .node-label {
-    color: var(--accent-cyan);
-}
-
-.node-box.active .pulse-ring {
-    position: absolute;
-    top: -4px; left: -4px; right: -4px; bottom: -4px;
-    border-radius: calc(var(--radius-md) + 4px);
-    border: 2px solid var(--accent-cyan);
-    animation: pulseBorder 1.5s infinite;
-    pointer-events: none;
-}
-
-@keyframes pulseBorder {
-    0% { transform: scale(1); opacity: 1; }
-    100% { transform: scale(1.08); opacity: 0; }
-}
-
-.node-tools.active {
-    border-color: var(--accent-amber);
-    box-shadow: 0 0 20px rgba(245, 158, 11, 0.4);
-    background: rgba(245, 158, 11, 0.08);
-}
-
-.node-tools.active .node-icon,
-.node-tools.active .node-label {
-    color: var(--accent-amber);
-}
-
-.node-tools.active .pulse-ring {
-    border-color: var(--accent-amber);
-}
-
-.flow-arrow {
-    color: var(--text-dim);
-    font-size: 16px;
-}
-
-.loop-connector {
-    display: flex;
-    flex-direction: column;
-    gap: 8px;
-    margin: 0 10px;
-}
-
-.loop-arrow {
-    display: flex;
-    align-items: center;
-    gap: 6px;
-    font-size: 10px;
-    color: var(--text-dim);
-    font-family: 'Fira Code', monospace;
 }
 
 /* ==========================================================================
@@ -550,20 +314,20 @@ input:checked + .slider:before {
 }
 
 .empty-icon {
-    font-size: 40px;
+    font-size: 44px;
     color: var(--text-dim);
     margin-bottom: 12px;
 }
 
 .empty-state h4 {
-    font-size: 16px;
+    font-size: 17px;
     color: var(--text-muted);
 }
 
 .empty-state p {
     font-size: 13px;
-    max-width: 360px;
-    margin-top: 4px;
+    max-width: 380px;
+    margin-top: 6px;
 }
 
 /* Trajectory Step Cards */
@@ -584,7 +348,7 @@ input:checked + .slider:before {
     display: flex;
     align-items: center;
     justify-content: space-between;
-    margin-bottom: 10px;
+    margin-bottom: 8px;
 }
 
 .step-tag {
@@ -615,16 +379,44 @@ input:checked + .slider:before {
     line-height: 1.5;
 }
 
-.code-block {
-    background: #060911;
-    border: 1px solid var(--border-color);
-    border-radius: var(--radius-sm);
-    padding: 10px 12px;
+.react-line {
+    font-size: 13.5px;
+    line-height: 1.6;
+    margin-bottom: 6px;
+}
+
+.react-line:last-child {
+    margin-bottom: 0;
+}
+
+.react-label {
+    font-weight: 700;
     font-family: 'Fira Code', monospace;
-    font-size: 12px;
-    color: #A7F3D0;
-    overflow-x: auto;
-    margin-top: 8px;
+}
+
+.react-user .react-label { color: var(--accent-cyan); }
+.react-user { color: #F3F4F6; }
+
+.react-thought .react-label { color: var(--accent-purple); }
+.react-thought { color: #E5E7EB; }
+
+.react-action .react-label { color: var(--accent-amber); }
+.react-action {
+    color: #FCD34D;
+    font-family: 'Fira Code', monospace;
+    font-size: 13px;
+}
+
+.react-action .action-fn {
+    color: var(--accent-cyan);
+    font-weight: 600;
+}
+
+.react-observation .react-label { color: var(--accent-emerald); }
+.react-observation {
+    color: #E5E7EB;
+    font-size: 13.5px;
+    line-height: 1.6;
 }
 
 /* ==========================================================================

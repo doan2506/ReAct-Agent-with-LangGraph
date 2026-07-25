@@ -22,7 +22,7 @@ class Context:
     )
 
     model: Annotated[str, {"__template_metadata__": {"kind": "llm"}}] = field(
-        default="google_genai/gemini-flash-latest",
+        default="google_genai/gemini-3.5-flash-lite",
         metadata={
             "description": "The name of the language model to use for the agent's main interactions. "
             "Should be in the form: provider/model-name."

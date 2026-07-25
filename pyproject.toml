@@ -60,6 +60,7 @@ lint.ignore = [
 "tests/*" = ["D", "UP"]
 "run_agent.py" = ["T201"]
 "authorize_gmail.py" = ["T201"]
+"src/app.py" = ["T201"]
 [tool.ruff.lint.pydocstyle]
 convention = "google"
 
