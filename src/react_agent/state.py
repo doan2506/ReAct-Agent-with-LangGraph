@@ -53,7 +53,6 @@ class State(InputState):
     It is set to 'True' when the step count reaches recursion_limit - 1.
     """
 
-    # Optional state attributes for tracking agent execution and email workflow
     retrieved_emails: list[dict[str, Any]] = field(default_factory=list)
     """List of email summaries or metadata retrieved during the run."""
 
